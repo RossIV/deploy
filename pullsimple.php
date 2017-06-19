@@ -1,6 +1,10 @@
 <?php
 include 'config.php';
 
+if (!isset($_SERVER["HTTP_X_HUB_SIGNATURE"])) {
+    die('missing server var');
+}
+
 list($algo, $hash) = explode('=', $_SERVER["HTTP_X_HUB_SIGNATURE"], 2);
 
 $payload = file_get_contents('php://input');
@@ -17,7 +21,7 @@ $data = json_decode($payload, true);
 
 echo "Authenticated properly\nDelivery ID: ".$_SERVER["HTTP_X_GITHUB_DELIVERY"]."\nRepository to deploy: ".$data["repository"]["full_name"]."\n";
 
-echo passthru("/bin/bash ".__DIR__."/pullsimple.sh ".$data["repository"]["name"]." ".$data["repository"]["full_name"]." ".$auth." 2>&1");
+echo passthru("/bin/bash ".__DIR__."/pullsimple.sh ".$data["repository"]["name"]." ".$data["repository"]["full_name"]." ".$auth." " .$data["repository"]["clone_url"]." 2>&1");
 
 if (file_exists('/var/www/'.$data["repository"]["name"].'/post-deploy-hook.php')) {
     include('/var/www/'.$data["repository"]["name"].'/post-deploy-hook.php');
