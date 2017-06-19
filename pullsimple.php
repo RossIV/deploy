@@ -21,7 +21,16 @@ $data = json_decode($payload, true);
 
 echo "Authenticated properly\nDelivery ID: ".$_SERVER["HTTP_X_GITHUB_DELIVERY"]."\nRepository to deploy: ".$data["repository"]["full_name"]."\n";
 
-echo passthru("/bin/bash ".__DIR__."/pullsimple.sh ".$data["repository"]["name"]." ".$data["repository"]["full_name"]." ".$auth." " .$data["repository"]["clone_url"]." 2>&1");
+if (isset($auth)) {
+    $gh_clone_url = $data["repository"]["clone_url"];
+    $gh_protocol = (substr($gh_clone_url,4,1) == "s") ? "https://" : "http://";
+    $gh_clone_path = substr($gh_clone_url,strlen($gh_protocol));
+    $clone_url = $gh_protocol . $auth . $gh_clone_path;
+} else {
+    $clone_url = $data["repository"]["clone_url"];
+}
+
+echo passthru("/bin/bash ".__DIR__."/pullsimple.sh ".$data["repository"]["name"]." ".$data["repository"]["full_name"]." ".$auth." " . $clone_url ." 2>&1");
 
 if (file_exists('/var/www/'.$data["repository"]["name"].'/post-deploy-hook.php')) {
     include('/var/www/'.$data["repository"]["name"].'/post-deploy-hook.php');
